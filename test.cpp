@@ -1,0 +1,166 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+
+using namespace std;
+
+int calculateTotalHeadMovement(const std::vector<int>& sequence, int initialPosition) {
+    int totalHeadMovement = 0;
+    int currentPosition = initialPosition;
+    for (int i = 0; i < sequence.size(); ++i) {
+        totalHeadMovement += std::abs(sequence[i] - currentPosition);
+        currentPosition = sequence[i];
+    }
+    return totalHeadMovement;
+}
+
+vector<int> FIFO(const vector<int>& requests, int initialHeadPosition) {
+    return requests;
+}
+
+vector<int> SSTF(vector<int> requests, int initialHeadPosition) {
+    vector<int> sequence;
+    int currentHeadPosition = initialHeadPosition;
+    while (!requests.empty()) {
+        auto nearest = min_element(requests.begin(), requests.end(), [currentHeadPosition](int a, int b) {
+            return abs(a - currentHeadPosition) < abs(b - currentHeadPosition);
+        });
+        sequence.push_back(*nearest);
+        currentHeadPosition = *nearest;
+        requests.erase(nearest);
+    }
+    return sequence;
+}
+
+vector<int> SCAN(const vector<int>& requests, int initialHeadPosition, int totalTracks) {
+    vector<int> left, right, sequence;
+    int currentHeadPosition = initialHeadPosition;
+
+    for (int i : requests) {
+        if (i < initialHeadPosition)
+            left.push_back(i);
+        else
+            right.push_back(i);
+    }
+
+    sort(left.begin(), left.end());
+    sort(right.begin(), right.end());
+
+    for (int i = initialHeadPosition; i < totalTracks; ++i) {
+        if (find(right.begin(), right.end(), i) != right.end()) {
+            sequence.push_back(i);
+            right.erase(find(right.begin(), right.end(), i));
+        }
+    }
+    sequence.push_back(totalTracks - 1); // Adding the last track
+
+    for (int i = totalTracks - 1; i >= 0; --i) {
+        if (find(left.begin(), left.end(), i) != left.end()) {
+            sequence.push_back(i);
+            left.erase(find(left.begin(), left.end(), i));
+        }
+    }
+
+    return sequence;
+}
+
+vector<int> CSCAN(const vector<int>& requests, int initialHeadPosition, int totalTracks) {
+    vector<int> left, right, sequence;
+    int currentHeadPosition = initialHeadPosition;
+
+    for (int i : requests) {
+        if (i < initialHeadPosition)
+            left.push_back(i);
+        else
+            right.push_back(i);
+    }
+
+    sort(left.begin(), left.end());
+    sort(right.begin(), right.end());
+
+    // Head moving towards right
+    for (int i = initialHeadPosition; i < totalTracks; ++i) {
+        if (find(right.begin(), right.end(), i) != right.end()) {
+            sequence.push_back(i);
+            right.erase(find(right.begin(), right.end(), i));
+        }
+    }
+
+    if (!right.empty()) 
+        sequence.push_back(totalTracks - 1);
+
+    sequence.push_back(0);
+
+    for (int i = 0; i < initialHeadPosition; ++i) {
+        if (find(left.begin(), left.end(), i) != left.end()) {
+            sequence.push_back(i);
+            left.erase(find(left.begin(), left.end(), i));
+        }
+    }
+
+    return sequence;
+}
+
+int main() {
+    int numRequests, initialHead, totalTracks;
+    cout << "Enter the number of disk requests: ";
+    cin >> numRequests;
+
+    if (numRequests < 1) {
+        cout << "Invalid number of requests. Exiting program." << endl;
+        return 1;
+    }
+
+    cout << "Enter the initial head position: ";
+    cin >> initialHead;
+
+    cout << "Enter the total number of tracks: ";
+    cin >> totalTracks;
+
+    if (initialHead < 0 || initialHead >= totalTracks) {
+        cout << "Invalid initial head position. Exiting program." << endl;
+        return 1;
+    }
+
+    vector<int> requests(numRequests);
+
+    cout << "Enter the track numbers for each request:" << endl;
+    for (int i = 0; i < numRequests; ++i) {
+        cin >> requests[i];
+        if (requests[i] < 0 || requests[i] >= totalTracks) {
+            cout << "Invalid track number. Exiting program." << endl;
+            return 1;
+        }
+    }
+
+    cout << "\nFIFO Scheduling:" << endl;
+    vector<int> fifoSequence = FIFO(requests, initialHead);
+    for (int track : fifoSequence) {
+        cout << track << " ";
+    }
+    cout << "\nTotal head movement: " << calculateTotalHeadMovement(fifoSequence, initialHead) << endl;
+
+    cout << "\nSSTF Scheduling:" << endl;
+    vector<int> sstfSequence = SSTF(requests, initialHead);
+    for (int track : sstfSequence) {
+        cout << track << " ";
+    }
+    cout << "\nTotal head movement: " << calculateTotalHeadMovement(sstfSequence, initialHead) << endl;
+
+    cout << "\nSCAN Scheduling:" << endl;
+    vector<int> scanSequence = SCAN(requests, initialHead, totalTracks);
+    for (int track : scanSequence) {
+        cout << track << " ";
+    }
+    cout << "\nTotal head movement: " << calculateTotalHeadMovement(scanSequence, initialHead) << endl;
+
+    cout << "\nC-SCAN Scheduling:" << endl;
+    vector<int> cscanSequence = CSCAN(requests, initialHead, totalTracks);
+    for (int track : cscanSequence) {
+        cout << track << " ";
+    }
+    cout << "\nTotal head movement: " << calculateTotalHeadMovement(cscanSequence, initialHead) << endl;
+
+    return 0;
+}
